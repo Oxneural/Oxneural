@@ -22,7 +22,7 @@ jobs:
     name: Markdown lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: DavidAnson/markdownlint-cli2-action@v19
         with:
           globs: "**/*.md"
@@ -31,7 +31,7 @@ jobs:
     name: Link and image check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check every link and badge image
         uses: lycheeverse/lychee-action@v2
         with:
@@ -51,14 +51,14 @@ jobs:
     name: Claims guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: bash scripts/check-claims.sh
 
   banner-present:
     name: Banner assets present
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify the banner assets the README depends on
         run: |
           set -euo pipefail
