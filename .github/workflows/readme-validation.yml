@@ -1,0 +1,82 @@
+name: README validation
+
+# The profile README is the first thing a prospective client sees.
+# A broken badge or a dead link is a credibility problem, so it is checked
+# on every change and again weekly, because links rot without anyone touching
+# the repository.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: "**/*.md"
+
+  link-and-image-check:
+    name: Link and image check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check every link and badge image
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # LinkedIn is excluded: it returns 999 to automated requests regardless
+          # of whether the profile exists. Checking it would make this job
+          # permanently red and therefore worthless.
+          args: >-
+            --no-progress
+            --max-retries 3
+            --accept 200,206,429
+            --exclude linkedin\.com
+            --verbose
+            README.md
+          fail: true
+
+  claims-guard:
+    name: Claims guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check-claims.sh
+
+  banner-present:
+    name: Banner assets present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify the banner assets the README depends on
+        run: |
+          set -euo pipefail
+          # banner.svg is what the README renders: the static artwork embedded as a
+          # data URI plus one slow light sweep. banner.png is the static source and
+          # the fallback anyone can use directly. Both must exist and stay small.
+          fail=0
+          for f in assets/banner.svg assets/banner.png; do
+            if [ ! -f "$f" ]; then echo "::error::$f is missing"; fail=1; continue; fi
+            size=$(stat -c%s "$f")
+            echo "$f present, ${size} bytes"
+            if [ "$size" -gt 1048576 ]; then
+              echo "::error::$f exceeds 1 MB (${size} bytes)"; fail=1
+            fi
+          done
+          # An SVG loaded via <img> cannot fetch external files, so the artwork must
+          # be embedded. Catch a future edit that turns it into an external reference.
+          if ! grep -q 'data:image/png;base64,' assets/banner.svg; then
+            echo "::error::assets/banner.svg no longer embeds its artwork"; fail=1
+          fi
+          exit $fail

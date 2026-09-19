@@ -1,0 +1,6 @@
+# Claims allowlist — Oxneural (profile repository)
+#
+# Empty by design. The profile README is the most public document OxNeural
+# owns; every prohibited phrase in it must be marked inline with
+# <!-- claims-ok --> on the line that qualifies it, so the qualification is
+# visible in the diff rather than hidden in this file.
